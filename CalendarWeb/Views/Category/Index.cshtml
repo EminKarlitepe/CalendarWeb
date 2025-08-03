@@ -1,0 +1,146 @@
+﻿@model List<CalendarWeb.Entities.Category>
+@{
+    ViewBag.Title = "Kategoriler";
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1><i class="fas fa-tags"></i> Kategoriler</h1>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient-primary">
+                            <h3 class="card-title"><i class="fas fa-plus-circle"></i> Kategori Ekle</h3>
+                        </div>
+                        <div class="card-body">
+                            @using (Html.BeginForm("Create", "Category", FormMethod.Post, new { id = "category-form", autocomplete = "off" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <div class="form-group mb-3">
+                                    <label for="category-name" class="font-weight-bold">Kategori Adı</label>
+                                    <input type="text" id="category-name" name="CategoryName" class="form-control" placeholder="Örn: Toplantı" required maxlength="30" />
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="category-color" class="font-weight-bold">Renk Seç</label><br />
+                                    <input type="color" id="category-color" name="CategoryColor" class="form-control form-control-color d-inline-block" value="#3c8dbc" style="width: 50px; height: 40px; padding: 2px; vertical-align: middle;" />
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-plus"></i> Kategori Ekle</button>
+                            }
+                        </div>
+                    </div>
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-header bg-gradient-info">
+                            <h3 class="card-title"><i class="fas fa-list"></i> Kategori Listesi</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="category-list">
+                                @if (!Model.Any())
+                                {
+                                    <div class="alert alert-info mb-0" id="no-category-message">Henüz kategori yok.</div>
+                                }
+                                else
+                                {
+                                    <ul class="list-group">
+                                        @foreach (var cat in Model)
+                                        {
+                                            <li class="list-group-item d-flex align-items-center justify-content-between" data-id="@cat.CategoryId">
+                                                <div>
+                                                    <span class="badge mr-2" style="background:@cat.CategoryColor;width:22px;height:22px;border-radius:5px;display:inline-block;"></span>
+                                                    <span class="font-weight-bold">@cat.CategoryName</span>
+                                                </div>
+                                                <button class="btn btn-danger btn-sm delete-category"><i class="fas fa-trash-alt"></i></button>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+@section scripts {
+    <script>
+        $(function () {
+            // Kategori Ekleme İşlemi
+            $('#category-form').submit(function (e) {
+                e.preventDefault();
+                var name = $('#category-name').val();
+                var color = $('#category-color').val();
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: '@Url.Action("Create", "Category")',
+                    type: 'POST',
+                    data: { CategoryName: name, CategoryColor: color, __RequestVerificationToken: token },
+                    success: function (res) {
+                        if (res.success) {
+                            $('#category-name').val("");
+                            $('#category-color').val("#3c8dbc");
+
+                            var newItem = `
+                                <li class="list-group-item d-flex align-items-center justify-content-between" data-id="${res.categoryId}">
+                                    <div>
+                                        <span class="badge mr-2" style="background:${res.categoryColor};width:22px;height:22px;border-radius:5px;display:inline-block;"></span>
+                                        <span class="font-weight-bold">${res.categoryName}</span>
+                                    </div>
+                                    <button class="btn btn-danger btn-sm delete-category"><i class="fas fa-trash-alt"></i></button>
+                                </li>
+                            `;
+
+                            if ($('#no-category-message').length) {
+                                $('#category-list').html('<ul class="list-group"></ul>');
+                            }
+                            $('#category-list ul').append(newItem);
+                        } else {
+                            alert(res.message || 'Kategori eklenirken bir hata oluştu!');
+                        }
+                    },
+                    error: function () {
+                        alert('Kategori eklenirken bir hata oluştu!');
+                    }
+                });
+            });
+
+            // Kategori Silme İşlemi
+            $('#category-list').on('click', '.delete-category', function () {
+                var listItem = $(this).closest('li');
+                var categoryId = listItem.data('id');
+                var categoryName = listItem.find('.font-weight-bold').text();
+
+                if (confirm(`"${categoryName}" kategorisini silmek istediğinizden emin misiniz?`)) {
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Category")',
+                        type: 'POST',
+                        data: { id: categoryId },
+                        success: function (res) {
+                            if (res.success) {
+                                listItem.remove();
+                                if ($('#category-list ul li').length === 0) {
+                                    $('#category-list').html('<div class="alert alert-info mb-0" id="no-category-message">Henüz kategori yok.</div>');
+                                }
+                                alert('Kategori başarıyla silindi.');
+                            } else {
+                                alert(res.message || 'Kategori silinirken bir hata oluştu.');
+                            }
+                        },
+                        error: function () {
+                            alert('Kategori silinirken bir hata oluştu.');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,93 @@
+﻿@model List<CalendarWeb.Entities.Event>
+@using CalendarWeb.Entities
+@{
+    ViewBag.Title = "Takvim";
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Takvim</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active">Takvim</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="sticky-top mb-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Etkinlik Listesi</h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="external-events">
+                                    @foreach (var ev in Model.Where(e => e.StartDate == null))
+                                    {
+                                        <div class="external-event" style="background-color:@ev.Category.CategoryColor; color:#fff; border-color:@ev.Category.CategoryColor" data-id="@ev.EventId">@ev.Title</div>
+                                    }
+                                    <div class="checkbox mt-2">
+                                        <label for="drop-remove">
+                                            <input type="checkbox" id="drop-remove"> Bıraktıktan Sonra Sil
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Etkinlik Ekle</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="event-form">
+                                    <div class="form-group">
+                                        <input type="text" id="event-title" class="form-control" placeholder="Etkinlik İsmi" required />
+                                    </div>
+                                    <div class="form-group mt-2">
+                                        <select id="event-category" class="form-control" required>
+                                            <option value="">Kategori Seçiniz</option>
+                                            @foreach (var cat in categories)
+                                            {
+                                                <option value="@cat.CategoryId" data-color="@cat.CategoryColor">@cat.CategoryName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-success mt-2 w-100">Etkinlik Ekle</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="card card-primary">
+                        <div class="card-body p-0">
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section scripts {
+    <script>
+        var calendarUrls = {
+            getEvents: '@Url.Action("GetEvents", "Calendar")',
+            updateDate: '@Url.Action("UpdateDate", "Calendar")',
+            deleteEvent: '@Url.Action("DeleteEvent", "Calendar")',
+            addEvent: '@Url.Action("AddEvent", "Calendar")'
+        };
+    </script>
+    <script src="~/Scripts/calendar-init.js"></script>
+}
